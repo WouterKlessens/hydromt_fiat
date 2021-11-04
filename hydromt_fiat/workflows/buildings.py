@@ -32,7 +32,8 @@ def create_population_per_building_map(
     logger.debug("Creating the population per building map.")
 
     # Correct the buildings and population maps.
-    da_bld = da_bld.where(da_bld <= 0, other=1)
+    da_bld = da_bld.where(((da_bld <= 0) | (da_bld == da_bld.raster.nodata)), other=1)
+    da_bld = da_bld.where(da_bld == 1, other=0)
     da_pop = da_pop.where(da_pop != da_pop.raster.nodata, other=0)
     da_bld.raster.set_nodata(nodata=0)
     da_pop.raster.set_nodata(nodata=0)
