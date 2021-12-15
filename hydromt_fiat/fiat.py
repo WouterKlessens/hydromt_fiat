@@ -29,7 +29,7 @@ class FiatModel(Model):
     _CONF = "fiat_configuration.ini"
     _GEOMS = {}  # FIXME Mapping from hydromt names to model specific names
     _MAPS = {}  # FIXME Mapping from hydromt names to model specific names
-    _FOLDERS = ["hazard", "exposure", "susceptibility", "output"]
+    _FOLDERS = ["hazard", "exposure", "vulnerability", "output"]
     _DATADIR = DATADIR
 
     def __init__(
@@ -311,7 +311,7 @@ class FiatModel(Model):
         chunks: int, optional
             Chunk sizes along each dimension used to load the building footprint and population count files into a dask arrays. The default value is 'auto'.
         function_fn: dict, optional
-            Absolute or relative (with respect to the configuration file or susceptibility directory) path to the susceptibility file. The default value is the JCR continental susceptibilty function (https://publications.jrc.ec.europa.eu/repository/handle/JRC105688) related to the country parameter.
+            Absolute or relative (with respect to the configuration file or vulnerability directory) path to the vulnerability file. The default value is the JCR continental vulnerability function (https://publications.jrc.ec.europa.eu/repository/handle/JRC105688) related to the country parameter.
         scale_factor: int, float, optional
             Scaling factor of the exposure values. The default value is 1.
         weight_factor: int, float, optional
@@ -358,8 +358,8 @@ class FiatModel(Model):
             # Get the associated country tag (alpha-3 code).
             tag = self.get_country_tag(country)
 
-            # Get the associated susceptibility information (function id and maximum damage value).
-            sf_id, max_damage = self.get_susceptibility_function()
+            # Get the associated vulnerability information (function id and maximum damage value).
+            sf_id, max_damage = self.get_vulnerability_function()
             self.logger.debug(
                 "Calculating building values with maximum damage: "
                 f"{max_damage:.2f} {unit:s}/person (country = {tag:s})."
@@ -659,8 +659,8 @@ class FiatModel(Model):
 
         return pop_correction
 
-    def get_susceptibility_function(self):
-        """Return the susceptibility function id and the maximum damage number."""
+    def get_vulnerability_function(self):
+        """Return the vulnerability function id and the maximum damage number."""
 
         # Read the global exposure configuration.
         df_config = pd.read_excel(
@@ -772,7 +772,7 @@ class FiatModel(Model):
             # Set the general information.
             self.set_config("hazard_dp", self.root.joinpath("hazard"))
             self.set_config("exposure_dp", self.root.joinpath("exposure"))
-            self.set_config("susceptibility_dp", self.root.joinpath("susceptibility"))
+            self.set_config("vulnerability_dp", self.root.joinpath("vulnerability"))
             self.set_config("output_dp", self.root.joinpath("output"))
 
             # Set the hazard information.
@@ -804,7 +804,7 @@ class FiatModel(Model):
                         "function_fn",
                     ).values():
                         if (
-                            not self.get_config("susceptibility_dp")
+                            not self.get_config("vulnerability_dp")
                             .joinpath(
                                 sf_path.name,
                             )
@@ -812,7 +812,7 @@ class FiatModel(Model):
                         ):
                             copy(
                                 sf_path,
-                                self.get_config("susceptibility_dp").joinpath(
+                                self.get_config("vulnerability_dp").joinpath(
                                     sf_path.name,
                                 ),
                             )
@@ -821,7 +821,7 @@ class FiatModel(Model):
                         exposure_fn,
                         "function_fn",
                         {
-                            i: self.get_config("susceptibility_dp").joinpath(j.name)
+                            i: self.get_config("vulnerability_dp").joinpath(j.name)
                             for i, j in self.get_config(
                                 "exposure",
                                 exposure_fn,
@@ -929,7 +929,7 @@ class FiatModel(Model):
             exposure_dict.update(
                 {
                     "function_fn": {
-                        i: config["susceptibility_dp"].joinpath(j)
+                        i: config["vulnerability_dp"].joinpath(j)
                         for i, j in exposure_dict["function_fn"].items()
                     }
                 }
@@ -958,7 +958,7 @@ class FiatModel(Model):
             "output_unit": str(self.config.get("output_unit")),
             "hazard_dp": str(self.config.get("hazard_dp").name),
             "exposure_dp": str(self.config.get("exposure_dp").name),
-            "susceptibility_dp": str(self.config.get("susceptibility_dp").name),
+            "vulnerability_dp": str(self.config.get("vulnerability_dp").name),
             "output_dp": str(self.config.get("output_dp").name),
             "category_output": str(self.config.get("category_output")),
             "total_output": str(self.config.get("total_output")),
@@ -1045,7 +1045,7 @@ class FiatModel(Model):
                             exposure_key,
                         )[function_key]
                         if (
-                            not self.get_config("susceptibility_dp")
+                            not self.get_config("vulnerability_dp")
                             .joinpath(
                                 sf_path.name,
                             )
@@ -1053,7 +1053,7 @@ class FiatModel(Model):
                         ):
                             copy(
                                 sf_path,
-                                self.get_config("susceptibility_dp").joinpath(
+                                self.get_config("vulnerability_dp").joinpath(
                                     sf_path.name,
                                 ),
                             )
